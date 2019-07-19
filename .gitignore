@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Ignore these folders
+/Data
+/Figs
+/Literature
+/Manuscripts
+/Presentations
+/Results
