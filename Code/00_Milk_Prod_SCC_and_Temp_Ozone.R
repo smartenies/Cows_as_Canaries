@@ -137,6 +137,8 @@ var_cor <- select(dairy_data, -DATE) %>%
   na.omit()
 ggcorrplot(round(cor(var_cor), 1), outline.col = "white",
            lab = T, colors = c("#6D9EC1", "white", "#E46726"))
+ggsave(here::here("Figs", "Correlation_Plot.jpeg"),
+       heigh = 5, width = 5, dpi = 750, units = "in", device = "jpeg")
 
 #' -----------------------------------------------------------------------------
 #' First, linear regression models for milk production

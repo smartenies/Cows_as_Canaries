@@ -2,10 +2,7 @@
 title: "Summary_of_Results"
 author: "Bonni Beaupied and Sheena Martenies"
 date: "7/22/2019"
-output: 
-  html_document:
-  toc: true
-  toc_float: true
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +23,7 @@ library(nlme)
 #' For ggplots
 simple_theme <- theme(
   #aspect.ratio = 1,
-  text  = element_text(family="Calibri",size = 12, color = 'black'),
+  text  = element_text(size = 12, color = 'black'),
   panel.spacing.y = unit(0,"cm"),
   panel.spacing.x = unit(0.25, "lines"),
   panel.grid.minor = element_line(color = "transparent"),
@@ -39,7 +36,6 @@ simple_theme <- theme(
   plot.margin=grid::unit(c(0,0,0,0), "mm"),
   legend.key = element_blank()
 )
-windowsFonts(Calibri=windowsFont("TT Calibri"))
 options(scipen = 9999) #avoid scientific notation
 ```
 
