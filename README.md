@@ -2,4 +2,5 @@
 Code to support the "Cows as Canaries" project
 
 
-The code here is intended to support Bonni Beaupied's Summer Scholars research project.
+The code here is intended to support Bonni Beaupied's Summer Scholars research 
+project.

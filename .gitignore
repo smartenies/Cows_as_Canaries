@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 
+README.md
+
 # Ignore these folders
 /Data
 /Figs
