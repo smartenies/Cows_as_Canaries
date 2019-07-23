@@ -134,7 +134,8 @@ pacf(dairy_data$PM2.5_max, plot = T, na.action = na.pass)
 #' Correlation coefficients between the variables
 #' PM2.5 mean and max are very highly correlated
 var_cor <- select(dairy_data, -DATE) %>% 
-  na.omit()
+  na.omit() %>% 
+  rename("O3_md8h" = "FOOTHILLS_DAILYMAXO3")
 ggcorrplot(round(cor(var_cor), 1), outline.col = "white",
            lab = T, colors = c("#6D9EC1", "white", "#E46726"))
 ggsave(here::here("Figs", "Correlation_Plot.jpeg"),
