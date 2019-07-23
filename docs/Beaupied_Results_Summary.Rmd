@@ -1,0 +1,344 @@
+---
+title: "Summary_of_Results"
+author: "Bonni Beaupied and Sheena Martenies"
+date: "7/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F)
+#' Load required libraries
+library(foreign)
+library(stats)
+library(splines)
+library(mgcv)
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(ggplot2)
+library(ggcorrplot)
+library(ggthemes)
+library(nlme)
+
+#' For ggplots
+simple_theme <- theme(
+  #aspect.ratio = 1,
+  text  = element_text(size = 12, color = 'black'),
+  panel.spacing.y = unit(0,"cm"),
+  panel.spacing.x = unit(0.25, "lines"),
+  panel.grid.minor = element_line(color = "transparent"),
+  panel.grid.major = element_line(color = "transparent"),
+  panel.border=element_rect(fill = NA),
+  panel.background=element_blank(),
+  axis.ticks = element_line(colour = "black"),
+  axis.text = element_text(color = "black", size=10),
+  # legend.position = c(0.1,0.1),
+  plot.margin=grid::unit(c(0,0,0,0), "mm"),
+  legend.key = element_blank()
+)
+options(scipen = 9999) #avoid scientific notation
+```
+
+
+```{r, echo = F}
+dairy_data <- read_csv(here::here("Data", "Dairy_Data_Full.csv"))
+```
+
+## Distributions of outcome and predictor variables
+Below are the histograms, scatter plots, and autocorrelation plots for the outcomes and predictor variables included in the dataset.
+
+#### Average milk production (L) per day 
+```{r, echo = F}
+ggplot(dairy_data) +
+  geom_histogram(aes(x = Avgmilk)) +
+  simple_theme
+
+ggplot(dairy_data) +
+  geom_point(aes(x = DATE, y = Avgmilk)) +
+  simple_theme
+
+acf(dairy_data$Avgmilk, plot = T)
+pacf(dairy_data$Avgmilk, plot = T)
+```
+
+#### Somatic Cell Counts
+```{r, echo = F}
+ggplot(dairy_data) +
+  geom_histogram(aes(x = SCC_avg)) +
+  simple_theme
+
+ggplot(dairy_data) +
+  geom_point(aes(x = DATE, y = SCC_avg)) +
+  simple_theme
+
+acf(dairy_data$SCC_avg, plot = T)
+pacf(dairy_data$SCC_avg, plot = T)
+```
+
+#### Temperature-Humidity Index
+```{r, echo = F}
+ggplot(dairy_data) +
+  geom_histogram(aes(x = THI)) +
+  simple_theme
+
+ggplot(dairy_data) +
+  geom_point(aes(x = DATE, y = THI)) +
+  simple_theme
+
+acf(dairy_data$THI, plot = T, na.action = na.pass)
+pacf(dairy_data$THI, plot = T, na.action = na.pass)
+```
+
+
+#### Ozone (ppb)
+```{r, echo = F}
+ggplot(dairy_data) +
+  geom_histogram(aes(x = FOOTHILLS_DAILYMAXO3)) +
+  simple_theme
+
+ggplot(dairy_data) +
+  geom_point(aes(x = DATE, y = FOOTHILLS_DAILYMAXO3)) +
+  simple_theme
+
+acf(dairy_data$FOOTHILLS_DAILYMAXO3, plot = T, na.action = na.pass)
+pacf(dairy_data$FOOTHILLS_DAILYMAXO3, plot = T, na.action = na.pass)
+```
+
+#### Daily mean PM2.5 (ug/m3)
+```{r, echo = F}
+ggplot(dairy_data) +
+  geom_histogram(aes(x = PM2.5_avg)) +
+  simple_theme
+
+ggplot(dairy_data) +
+  geom_point(aes(x = DATE, y = PM2.5_avg)) +
+  simple_theme
+
+acf(dairy_data$PM2.5_avg, plot = T, na.action = na.pass)
+pacf(dairy_data$PM2.5_avg, plot = T, na.action = na.pass)
+```
+
+#### Daily maximum PM2.5 (ug/m3)
+```{r, echo = F}
+ggplot(dairy_data) +
+  geom_histogram(aes(x = PM2.5_max)) +
+  simple_theme
+
+ggplot(dairy_data) +
+  geom_point(aes(x = DATE, y = PM2.5_max)) +
+  simple_theme
+
+acf(dairy_data$PM2.5_max, plot = T, na.action = na.pass)
+pacf(dairy_data$PM2.5_max, plot = T, na.action = na.pass)
+```
+
+#### Correlations between each outcome and the predictor variables
+
+```{r, echo = F}
+var_cor <- select(dairy_data, -DATE) %>% 
+  na.omit()
+ggcorrplot(round(cor(var_cor), 1), outline.col = "white",
+           lab = T, colors = c("#6D9EC1", "white", "#E46726"))
+```
+
+## Regression Analyses for Daily Production
+
+We used two different modeling approaches to estimate the relationship between daily milk production and the environmental predictors: linear regression and generalized least squares with an autrocorrelation (AR1) structure.
+
+#### Linear regression results
+
+Model 0: Just date
+```{r, echo = F}
+prod_lm_0 <- lm(Avgmilk ~ DATE, data = dairy_data)
+summary(prod_lm_0)
+par(mfrow = c(2,2))
+plot(prod_lm_0)
+par(mfrow = c(1,1))
+```
+
+Model 1: Add THI
+```{r, echo = F}
+prod_lm_1 <- lm(Avgmilk ~ THI, data = dairy_data)
+summary(prod_lm_1)
+par(mfrow = c(2,2))
+plot(prod_lm_1)
+par(mfrow = c(1,1))
+```
+
+Model 2: Add ozone
+```{r, echo = F}
+prod_lm_2 <- lm(Avgmilk ~ THI + FOOTHILLS_DAILYMAXO3, data = dairy_data)
+summary(prod_lm_2)
+par(mfrow = c(2,2))
+plot(prod_lm_2)
+par(mfrow = c(1,1))
+```
+
+Model 3: Add daily mean PM2.5
+```{r, echo = F}
+prod_lm_3 <- lm(Avgmilk ~ THI + FOOTHILLS_DAILYMAXO3 + PM2.5_avg, 
+              data = dairy_data)
+summary(prod_lm_3)
+par(mfrow = c(2,2))
+plot(prod_lm_3)
+par(mfrow = c(1,1))
+```
+
+Model 4: Swap for daily max pm2.5
+```{r, echo = F}
+prod_lm_4 <- lm(Avgmilk ~ THI + FOOTHILLS_DAILYMAXO3 + PM2.5_max, 
+              data = dairy_data)
+summary(prod_lm_4)
+par(mfrow = c(2,2))
+plot(prod_lm_4)
+par(mfrow = c(1,1))
+```
+
+#### Generalized least squares regression results
+Using a complete dataset:
+```{r, echo = F}
+dairy_data2 <- na.omit(dairy_data)
+nrow(dairy_data2)
+summary(dairy_data2)
+```
+
+Model 0: Just date
+```{r, echo = F}
+prod_0 <- gls(Avgmilk ~ DATE, data = dairy_data2,
+               correlation = corAR1())
+summary(prod_0)
+plot(prod_0)
+```
+
+Model 1: Add THI
+```{r, echo = F}
+prod_1 <- gls(Avgmilk ~ DATE + THI, data = dairy_data2,
+              correlation = corAR1())
+summary(prod_1)
+plot(prod_1)
+```
+
+Model 2: Add ozone
+```{r, echo = F}
+prod_2 <- gls(Avgmilk ~ DATE + THI + FOOTHILLS_DAILYMAXO3, data = dairy_data2,
+              correlation = corAR1())
+summary(prod_2)
+plot(prod_2)
+```
+
+Model 3: Add daily mean PM2.5
+```{r, echo = F}
+prod_3 <- gls(Avgmilk ~ DATE + THI + FOOTHILLS_DAILYMAXO3 + PM2.5_avg, 
+              data = dairy_data2,
+              correlation = corAR1())
+summary(prod_3)
+plot(prod_3)
+```
+
+Model 4: Swap for daily max pm2.5
+```{r, echo = F}
+prod_4 <- gls(Avgmilk ~ DATE + THI + FOOTHILLS_DAILYMAXO3 + PM2.5_max, 
+              data = dairy_data2,
+              correlation = corAR1())
+summary(prod_4)
+plot(prod_4)
+```
+
+## Regression Analyses for Somatic Cell Counts
+
+We used two different modeling approaches to estimate the relationship between daily somatic cell counts and the environmental predictors: linear regression and generalized least squares with an autrocorrelation (AR1) structure.
+
+#### Linear regression results
+
+Model 0: Just date
+```{r, echo = F}
+scc_lm_0 <- lm(SCC_avg ~ DATE, data = dairy_data)
+summary(scc_lm_0)
+par(mfrow = c(2,2))
+plot(scc_lm_0)
+par(mfrow = c(1,1))
+```
+
+Model 1: Add THI
+```{r, echo = F}
+scc_lm_1 <- lm(SCC_avg ~ THI, data = dairy_data)
+summary(scc_lm_1)
+par(mfrow = c(2,2))
+plot(scc_lm_1)
+par(mfrow = c(1,1))
+```
+
+Model 2: Add ozone
+```{r, echo = F}
+scc_lm_2 <- lm(SCC_avg ~ THI + FOOTHILLS_DAILYMAXO3, data = dairy_data)
+summary(scc_lm_2)
+par(mfrow = c(2,2))
+plot(scc_lm_2)
+par(mfrow = c(1,1))
+```
+
+Model 3: Add daily mean PM2.5
+```{r, echo = F}
+scc_lm_3 <- lm(SCC_avg ~ THI + FOOTHILLS_DAILYMAXO3 + PM2.5_avg, 
+                data = dairy_data)
+summary(scc_lm_3)
+par(mfrow = c(2,2))
+plot(scc_lm_3)
+par(mfrow = c(1,1))
+```
+
+Model 4: Swap for daily max pm2.5
+```{r, echo = F}
+scc_lm_4 <- lm(SCC_avg ~ THI + FOOTHILLS_DAILYMAXO3 + PM2.5_max, 
+                data = dairy_data)
+summary(scc_lm_4)
+par(mfrow = c(2,2))
+plot(scc_lm_4)
+par(mfrow = c(1,1))
+```
+
+#### Generalized least squares regression results
+
+Model 0: Just date
+```{r, echo = F}
+scc_0 <- gls(SCC_avg ~ DATE, data = dairy_data2,
+              correlation = corAR1())
+summary(scc_0)
+plot(scc_0)
+```
+
+Model 1: Add THI
+```{r, echo = F}
+scc_1 <- gls(SCC_avg ~ DATE + THI, data = dairy_data2,
+              correlation = corAR1())
+summary(scc_1)
+plot(scc_1)
+```
+
+Model 2: Add ozone
+```{r, echo = F}
+scc_2 <- gls(SCC_avg ~ DATE + THI + FOOTHILLS_DAILYMAXO3, data = dairy_data2,
+              correlation = corAR1())
+summary(scc_2)
+plot(scc_2)
+```
+
+Model 3: Add daily mean PM2.5
+```{r, echo = F}
+scc_3 <- gls(SCC_avg ~ DATE + THI + FOOTHILLS_DAILYMAXO3 + PM2.5_avg, 
+             data = dairy_data2,
+             correlation = corAR1())
+summary(scc_3)
+plot(scc_3)
+```
+
+Model 4: Swap for daily max pm2.5
+```{r, echo = F}
+scc_4 <- gls(SCC_avg ~ DATE + THI + FOOTHILLS_DAILYMAXO3 + PM2.5_max, 
+             data = dairy_data2,
+             correlation = corAR1())
+summary(scc_4)
+plot(scc_4)
+```
+
+
