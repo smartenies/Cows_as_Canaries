@@ -20,7 +20,7 @@ dates <- format(dates, "%m%d%Y")
 pc_list <- c(88101, 44201, 42101)
 pc_names <- c("88101", "44201", "42101") #pm2.5, ozone, CO
 
-#' Scrape data
+#' Scrape data from CDPHE website
 if(!dir.exists(here::here("Data/Temp"))) dir.create(here::here("Data/Temp"))
 
 for (pol in 1:length(pc_list)) {
